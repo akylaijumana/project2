@@ -1,0 +1,135 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    string expression;
+    char choice;
+    
+    cout << "Welcome to the Calculator!" << endl;
+    
+    do {
+        // Prompt the user to enter an arithmetic expression
+        cout << "Enter an arithmetic expression: ";
+        getline(cin, expression);
+
+        // Function to check if a character is an operator
+        auto isOperator = [](char ch) {
+            return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^' || ch == 's';
+        };
+
+        // Function to get the precedence of an operator
+        auto precedence = [](char op) {
+            if (op == '^' || op == 's')
+                return 3;
+            else if (op == '*' || op == '/')
+                return 2;
+            else if (op == '+' || op == '-')
+                return 1;
+            else
+                return 0;
+        };
+
+        // Function to perform arithmetic operations
+        auto evaluate = [](double num1, double num2, char op) {
+            switch (op) {
+                case '+': return num1 + num2;
+                case '-': return num1 - num2;
+                case '*': return num1 * num2;
+                case '/': return num1 / num2;
+                case '^': return pow(num1, num2);
+                case 's': return sqrt(num1);
+                default: return 0.0; // Invalid operator
+            }
+        };
+
+        // Stack to store operators
+        stack<char> operators;
+        // Stack to store numbers
+        stack<double> numbers;
+
+        // Tokenize the expression
+        istringstream ss(expression);
+        char ch;
+        while (ss >> ch) {
+            // If the character is a digit or a dot (for decimal numbers)
+            if (isdigit(ch) || ch == '.') {
+                ss.putback(ch);
+                double num;
+                ss >> num;
+                numbers.push(num);
+            } 
+            // If the character is an operator
+            else if (isOperator(ch)) {
+                // If the operator is 's' (square root), handle it separately
+                if (ch == 's') {
+                    // Extract the number for square root calculation
+                    double num;
+                    ss >> num;
+                    if (num < 0) {
+                        cerr << "Error: Square root of a negative number!" << endl;
+                       
+                    }
+                    numbers.push(sqrt(num));
+                } else {
+                    // Evaluate higher precedence operators already on the stack
+                    while (!operators.empty() && precedence(operators.top()) >= precedence(ch)) {
+                        char op = operators.top(); operators.pop();
+                        double num2 = numbers.top(); numbers.pop();
+                        double num1 = numbers.top(); numbers.pop();
+                        numbers.push(evaluate(num1, num2, op));
+                    }
+                    // Push the current operator onto the stack
+                    operators.push(ch);
+                }
+            } 
+            // If the character is an opening parenthesis
+            else if (ch == '(') {
+                operators.push(ch);
+            } 
+            // If the character is a closing parenthesis
+            else if (ch == ')') {
+                // Evaluate all operators until an opening parenthesis is found
+                while (!operators.empty() && operators.top() != '(') {
+                    char op = operators.top(); operators.pop();
+                    double num2 = numbers.top(); numbers.pop();
+                    double num1 = numbers.top(); numbers.pop();
+                    numbers.push(evaluate(num1, num2, op));
+                }
+                // Remove the opening parenthesis from the stack
+                if (!operators.empty() && operators.top() == '(')
+                    operators.pop();
+                else {
+                    cerr << "Error!" << endl;
+                    exit(1);
+                }
+            }
+            // Ignore other characters
+        }
+
+        // Evaluate remaining operations on the stack
+        while (!operators.empty()) {
+            char op = operators.top(); operators.pop();
+            double num2 = numbers.top(); numbers.pop();
+            double num1 = numbers.top(); numbers.pop();
+            numbers.push(evaluate(num1, num2, op));
+        }
+
+        // The final result will be at the top of the numbers stack
+        if (!numbers.empty()) {
+            double result = numbers.top();
+            cout << "Result: " << result << endl;
+        } else {
+            cerr << "No result " << endl;
+            exit(1);
+        }
+
+        // Ask if the user wants to continue
+        cout << "Do you want to continue? (y/n): ";
+        cin >> choice;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear input buffer
+    } while (tolower(choice) == 'y');
+
+    cout << "Thank you for using the Calculator!" << endl;
+
+    return 0;
+}
